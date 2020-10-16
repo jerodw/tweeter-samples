@@ -30,6 +30,14 @@ public class FollowingPresenter {
     }
 
     /**
+     * Creates an instance without requiring a view, useful for testing
+     *
+     */
+    public FollowingPresenter() {
+        this.view = new View() {};
+    }
+
+    /**
      * Returns the users that the user specified in the request is following. Uses information in
      * the request object to limit the number of followees returned and to return the next set of
      * followees after any that were returned in a previous request.

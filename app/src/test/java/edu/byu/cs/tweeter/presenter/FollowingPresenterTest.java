@@ -1,9 +1,13 @@
 package edu.byu.cs.tweeter.presenter;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.spy;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -21,7 +25,7 @@ public class FollowingPresenterTest {
     private FollowingPresenter presenter;
 
     @BeforeEach
-    public void setup() throws IOException {
+    public void setup() {
         User currentUser = new User("FirstName", "LastName", null);
 
         User resultUser1 = new User("FirstName1", "LastName1",
@@ -35,28 +39,23 @@ public class FollowingPresenterTest {
         response = new FollowingResponse(Arrays.asList(resultUser1, resultUser2, resultUser3), false);
 
         // Create a mock FollowingService
-        mockFollowingService = Mockito.mock(FollowingService.class);
-        Mockito.when(mockFollowingService.getFollowees(request)).thenReturn(response);
+        mockFollowingService = mock(FollowingService.class);
 
         // Wrap a FollowingPresenter in a spy that will use the mock service.
-        presenter = Mockito.spy(new FollowingPresenter(new FollowingPresenter.View() {}));
-        Mockito.when(presenter.getFollowingService()).thenReturn(mockFollowingService);
+        presenter = spy(new FollowingPresenter());
+        when(presenter.getFollowingService()).thenReturn(mockFollowingService);
     }
 
     @Test
     public void testGetFollowing_returnsServiceResult() throws IOException {
-        Mockito.when(mockFollowingService.getFollowees(request)).thenReturn(response);
-
-        // Assert that the presenter returns the same response as the service (it doesn't do
-        // anything else, so there's nothing else to test).
-        Assertions.assertEquals(response, presenter.getFollowing(request));
+        when(mockFollowingService.getFollowees(request)).thenReturn(response);
+        assertEquals(response, presenter.getFollowing(request));
     }
 
     @Test
     public void testGetFollowing_serviceThrowsIOException_presenterThrowsIOException() throws IOException {
-        Mockito.when(mockFollowingService.getFollowees(request)).thenThrow(new IOException());
-
-        Assertions.assertThrows(IOException.class, () -> {
+        when(mockFollowingService.getFollowees(request)).thenThrow(new IOException());
+        assertThrows(IOException.class, () -> {
             presenter.getFollowing(request);
         });
     }
