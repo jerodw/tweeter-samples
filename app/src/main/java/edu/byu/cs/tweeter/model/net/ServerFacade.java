@@ -131,7 +131,7 @@ public class ServerFacade {
      * Returns the list of dummy followee data. This is written as a separate method to allow
      * mocking of the followees.
      *
-     * @return the generator.
+     * @return the followees.
      */
     List<User> getDummyFollowees() {
         return Arrays.asList(user1, user2, user3, user4, user5, user6, user7,
