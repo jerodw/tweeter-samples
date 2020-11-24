@@ -42,7 +42,7 @@ public class FollowingServiceProxyTest {
                 "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png");
 
         // Setup request objects to use in the tests
-        validRequest = new FollowingRequest(currentUser, 3, null);
+        validRequest = new FollowingRequest(currentUser.getAlias(), 3, null);
         invalidRequest = new FollowingRequest(null, 0, null);
 
         // Setup a mock ServerFacade that will return known responses
