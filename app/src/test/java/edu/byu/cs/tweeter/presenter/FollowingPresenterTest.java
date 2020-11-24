@@ -31,7 +31,7 @@ public class FollowingPresenterTest {
         User resultUser3 = new User("FirstName3", "LastName3",
                 "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png");
 
-        request = new FollowingRequest(currentUser, 3, null);
+        request = new FollowingRequest(currentUser.getAlias(), 3, null);
         response = new FollowingResponse(Arrays.asList(resultUser1, resultUser2, resultUser3), false);
 
         // Create a mock FollowingService
