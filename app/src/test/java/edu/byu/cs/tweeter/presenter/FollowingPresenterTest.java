@@ -58,11 +58,11 @@ public class FollowingPresenterTest {
      * {@link #setExceptionForRequest(FollowingRequest, Exception)}.
      * {@link #setResponseForRequest(FollowingRequest, FollowingResponse)}.
      */
-    private class FollowingServiceDouble extends FollowingService {
+    private static class FollowingServiceDouble extends FollowingService {
 
-        private Observer observer;
-        private Map<FollowingRequest, FollowingResponse> responsesByRequest = new HashMap<>();
-        private Map<FollowingRequest, Exception> exceptionsByRequest = new HashMap<>();
+        private final Observer observer;
+        private final Map<FollowingRequest, FollowingResponse> responsesByRequest = new HashMap<>();
+        private final Map<FollowingRequest, Exception> exceptionsByRequest = new HashMap<>();
 
         /**
          * Creates an instance.
