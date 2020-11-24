@@ -74,7 +74,7 @@ public class ServerFacade {
                 throw new AssertionError();
             }
 
-            if(request.getFollower() == null) {
+            if(request.getFollowerAlias() == null) {
                 throw new AssertionError();
             }
         }
@@ -85,7 +85,7 @@ public class ServerFacade {
         boolean hasMorePages = false;
 
         if(request.getLimit() > 0) {
-            int followeesIndex = getFolloweesStartingIndex(request.getLastFollowee(), allFollowees);
+            int followeesIndex = getFolloweesStartingIndex(request.getLastFolloweeAlias(), allFollowees);
 
             for(int limitCounter = 0; followeesIndex < allFollowees.size() && limitCounter < request.getLimit(); followeesIndex++, limitCounter++) {
                 responseFollowees.add(allFollowees.get(followeesIndex));
@@ -102,20 +102,20 @@ public class ServerFacade {
      * be returned in the current request. This will be the index of the next followee after the
      * specified 'lastFollowee'.
      *
-     * @param lastFollowee the last followee that was returned in the previous request or null if
-     *                     there was no previous request.
+     * @param lastFolloweeAlias the alias of the last followee that was returned in the previous
+     *                          request or null if there was no previous request.
      * @param allFollowees the generated list of followees from which we are returning paged results.
      * @return the index of the first followee to be returned.
      */
-    private int getFolloweesStartingIndex(User lastFollowee, List<User> allFollowees) {
+    private int getFolloweesStartingIndex(String lastFolloweeAlias, List<User> allFollowees) {
 
         int followeesIndex = 0;
 
-        if(lastFollowee != null) {
+        if(lastFolloweeAlias != null) {
             // This is a paged request for something after the first page. Find the first item
             // we should return
             for (int i = 0; i < allFollowees.size(); i++) {
-                if(lastFollowee.equals(allFollowees.get(i))) {
+                if(lastFolloweeAlias.equals(allFollowees.get(i).getAlias())) {
                     // We found the index of the last item returned last time. Increment to get
                     // to the first one we should return
                     followeesIndex = i + 1;
