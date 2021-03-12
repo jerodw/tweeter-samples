@@ -1,9 +1,5 @@
 package edu.byu.cs.tweeter.view.main;
 
-import androidx.arch.core.util.Function;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 /**
@@ -13,19 +9,15 @@ import androidx.lifecycle.ViewModel;
 @SuppressWarnings("WeakerAccess")
 public class PageViewModel extends ViewModel {
 
-    private final MutableLiveData<Integer> index = new MutableLiveData<>();
-    private final LiveData<String> text = Transformations.map(index, new Function<Integer, String>() {
-        @Override
-        public String apply(Integer input) {
-            return "Hello world from section: " + input;
-        }
-    });
+    private int index = 0;
+    private String text = "";
 
-    public void setIndex(int index) {
-        this.index.setValue(index);
+    public void setIndex(int value) {
+        index = value;
+        text = "Hello world from section: " + index;
     }
 
-    public LiveData<String> getText() {
+    public String getText() {
         return text;
     }
 }

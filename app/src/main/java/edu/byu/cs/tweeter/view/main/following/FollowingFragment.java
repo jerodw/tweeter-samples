@@ -1,19 +1,17 @@
 package edu.byu.cs.tweeter.view.main.following;
 
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -23,10 +21,7 @@ import java.util.List;
 import edu.byu.cs.tweeter.R;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.service.response.FollowingResponse;
 import edu.byu.cs.tweeter.presenter.FollowingPresenter;
-import edu.byu.cs.tweeter.view.asyncTasks.GetFollowingTask;
 import edu.byu.cs.tweeter.view.util.ImageUtils;
 
 /**
@@ -41,10 +36,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
 
-    private static final int PAGE_SIZE = 10;
-
-    private User user;
-    private AuthToken authToken;
     private FollowingPresenter presenter;
 
     private FollowingRecyclerViewAdapter followingRecyclerViewAdapter;
@@ -69,15 +60,30 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
     }
 
     @Override
+    public void setLoading(boolean value) {
+        followingRecyclerViewAdapter.setLoading(value);
+    }
+
+    @Override
+    public void addItems(List<User> newUsers) {
+        followingRecyclerViewAdapter.addItems(newUsers);
+    }
+
+    @Override
+    public void displayErrorMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_following, container, false);
 
         //noinspection ConstantConditions
-        user = (User) getArguments().getSerializable(USER_KEY);
-        authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
+        User user = (User) getArguments().getSerializable(USER_KEY);
+        AuthToken authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
 
-        presenter = new FollowingPresenter(this);
+        presenter = new FollowingPresenter(this, user, authToken);
 
         RecyclerView followingRecyclerView = view.findViewById(R.id.followingRecyclerView);
 
@@ -88,6 +94,8 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         followingRecyclerView.setAdapter(followingRecyclerViewAdapter);
 
         followingRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
+
+        presenter.loadMoreItems();
 
         return view;
     }
@@ -142,20 +150,32 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
     /**
      * The adapter for the RecyclerView that displays the Following data.
      */
-    private class FollowingRecyclerViewAdapter extends RecyclerView.Adapter<FollowingHolder> implements GetFollowingTask.Observer {
+    private class FollowingRecyclerViewAdapter extends RecyclerView.Adapter<FollowingHolder> {
 
         private final List<User> users = new ArrayList<>();
 
-        private edu.byu.cs.tweeter.model.domain.User lastFollowee;
-
-        private boolean hasMorePages;
         private boolean isLoading = false;
 
         /**
          * Creates an instance and loads the first page of following data.
          */
         FollowingRecyclerViewAdapter() {
-            loadMoreItems();
+            return;
+        }
+
+        /**
+         * Called to notify the adapter when data loading starts and ends.
+         *
+         * @param value true if we are loading, false otherwise.
+         */
+        void setLoading(boolean value) {
+            isLoading = value;
+            if (value) {
+                addLoadingFooter();
+            }
+            else {
+                removeLoadingFooter();
+            }
         }
 
         /**
@@ -254,49 +274,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         }
 
         /**
-         * Causes the Adapter to display a loading footer and make a request to get more following
-         * data.
-         */
-        void loadMoreItems() {
-            isLoading = true;
-            addLoadingFooter();
-
-            GetFollowingTask getFollowingTask = new GetFollowingTask(presenter, this);
-            FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-            getFollowingTask.execute(request);
-        }
-
-        /**
-         * A callback indicating more following data has been received. Loads the new followees
-         * and removes the loading footer.
-         *
-         * @param followingResponse the asynchronous response to the request to load more items.
-         */
-        @Override
-        public void followeesRetrieved(FollowingResponse followingResponse) {
-            List<User> followees = followingResponse.getFollowees();
-
-            lastFollowee = (followees.size() > 0) ? followees.get(followees.size() -1) : null;
-            hasMorePages = followingResponse.getHasMorePages();
-
-            isLoading = false;
-            removeLoadingFooter();
-            followingRecyclerViewAdapter.addItems(followees);
-        }
-
-        /**
-         * A callback indicating that an exception was thrown by the presenter.
-         *
-         * @param exception the exception.
-         */
-        @Override
-        public void handleException(Exception exception) {
-            Log.e(LOG_TAG, exception.getMessage(), exception);
-            removeLoadingFooter();
-            Toast.makeText(getContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
-        }
-
-        /**
          * Adds a dummy user to the list of users so the RecyclerView will display a view (the
          * loading footer view) at the bottom of the list.
          */
@@ -347,11 +324,9 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             int totalItemCount = layoutManager.getItemCount();
             int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
 
-            if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
-                if ((visibleItemCount + firstVisibleItemPosition) >=
-                        totalItemCount && firstVisibleItemPosition >= 0) {
-                    followingRecyclerViewAdapter.loadMoreItems();
-                }
+            if ((visibleItemCount + firstVisibleItemPosition) >=
+                    totalItemCount && firstVisibleItemPosition >= 0) {
+                presenter.loadMoreItems();
             }
         }
     }
