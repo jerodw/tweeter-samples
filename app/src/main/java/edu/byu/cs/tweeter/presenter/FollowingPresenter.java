@@ -60,6 +60,8 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
      * Creates an instance.
      *
      * @param view the view for which this class is the presenter.
+     * @param user the user that is currently logged in.
+     * @param authToken the auth token for the current session.
      */
     public FollowingPresenter(View view, User user, AuthToken authToken) {
         this.view = view;
