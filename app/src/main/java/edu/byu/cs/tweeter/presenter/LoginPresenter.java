@@ -1,5 +1,9 @@
 package edu.byu.cs.tweeter.presenter;
 
+import android.util.Log;
+
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.service.LoginService;
 import edu.byu.cs.tweeter.model.service.request.LoginRequest;
 import edu.byu.cs.tweeter.model.service.response.LoginResponse;
@@ -9,15 +13,16 @@ import edu.byu.cs.tweeter.model.service.response.LoginResponse;
  */
 public class LoginPresenter implements LoginService.Observer {
 
+    private static final String LOG_TAG = "LoginPresenter";
+
     private final View view;
 
     /**
      * The interface by which this presenter communicates with it's view.
      */
     public interface View {
-        void loginSuccessful(LoginResponse loginResponse);
-        void loginUnsuccessful(LoginResponse loginResponse);
-        void handleException(Exception exception);
+        void loginSuccessful(User user, AuthToken authToken);
+        void loginUnsuccessful(String message);
     }
 
     /**
@@ -34,11 +39,13 @@ public class LoginPresenter implements LoginService.Observer {
     }
 
     /**
-     * Makes an asynchronous login request.
+     * Initiates the login process.
      *
-     * @param loginRequest the request.
+     * @param username the user's username.
+     * @param password the user's password.
      */
-    public void login(LoginRequest loginRequest) {
+    public void initiateLogin(String username, String password) {
+        LoginRequest loginRequest = new LoginRequest(username, password);
         LoginService loginService = new LoginService(this);
         loginService.login(loginRequest);
     }
@@ -51,7 +58,7 @@ public class LoginPresenter implements LoginService.Observer {
      */
     @Override
     public void loginSuccessful(LoginResponse loginResponse) {
-        view.loginSuccessful(loginResponse);
+        view.loginSuccessful(loginResponse.getUser(), loginResponse.getAuthToken());
     }
 
     /**
@@ -62,7 +69,7 @@ public class LoginPresenter implements LoginService.Observer {
      */
     @Override
     public void loginUnsuccessful(LoginResponse loginResponse) {
-        view.loginUnsuccessful(loginResponse);
+        view.loginUnsuccessful("Failed to login. " + loginResponse.getMessage());
     }
 
     /**
@@ -73,6 +80,7 @@ public class LoginPresenter implements LoginService.Observer {
      */
     @Override
     public void handleException(Exception exception) {
-        view.handleException(exception);
+        Log.e(LOG_TAG, exception.getMessage(), exception);
+        view.loginUnsuccessful("Failed to login because of exception: " + exception.getMessage());
     }
 }

@@ -4,14 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.model.service.request.LoginRequest;
-import edu.byu.cs.tweeter.model.service.response.LoginResponse;
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.presenter.LoginPresenter;
 import edu.byu.cs.tweeter.view.main.MainActivity;
 
@@ -44,9 +43,8 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
                 loginInToast.show();
 
                 // It doesn't matter what values we put here. We will be logged in with a hard-coded dummy user.
-                LoginRequest loginRequest = new LoginRequest("dummyUserName", "dummyPassword");
                 LoginPresenter presenter = new LoginPresenter(LoginActivity.this);
-                presenter.login(loginRequest);
+                presenter.initiateLogin("dummyUserName", "dummyPassword");
             }
         });
     }
@@ -54,14 +52,15 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
     /**
      * The callback method that gets invoked for a successful login. Displays the MainActivity.
      *
-     * @param loginResponse the response from the login request.
+     * @param user the user that logged in.
+     * @param authToken the session's auth token
      */
     @Override
-    public void loginSuccessful(LoginResponse loginResponse) {
+    public void loginSuccessful(User user, AuthToken authToken) {
         Intent intent = new Intent(this, MainActivity.class);
 
-        intent.putExtra(MainActivity.CURRENT_USER_KEY, loginResponse.getUser());
-        intent.putExtra(MainActivity.AUTH_TOKEN_KEY, loginResponse.getAuthToken());
+        intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
+        intent.putExtra(MainActivity.AUTH_TOKEN_KEY, authToken);
 
         loginInToast.cancel();
         startActivity(intent);
@@ -71,22 +70,11 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
      * The callback method that gets invoked for an unsuccessful login. Displays a toast with a
      * message indicating why the login failed.
      *
-     * @param loginResponse the response from the login request.
+     * @param message error message describing the failed login.
      */
     @Override
-    public void loginUnsuccessful(LoginResponse loginResponse) {
-        Toast.makeText(this, "Failed to login. " + loginResponse.getMessage(), Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * A callback indicating that an exception was thrown in an asynchronous method called on the
-     * presenter.
-     *
-     * @param exception the exception.
-     */
-    @Override
-    public void handleException(Exception exception) {
-        Log.e(LOG_TAG, exception.getMessage(), exception);
-        Toast.makeText(this, "Failed to login because of exception: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+    public void loginUnsuccessful(String message) {
+        loginInToast.cancel();
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 }
