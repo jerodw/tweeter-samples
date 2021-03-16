@@ -50,6 +50,18 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
         this.authToken = authToken;
     }
 
+    User getLastFollowee() {
+        return lastFollowee;
+    }
+
+    boolean isHasMorePages() {
+        return hasMorePages;
+    }
+
+    boolean isLoading() {
+        return isLoading;
+    }
+
     /**
      * Called by the view to request that another page of "following" users be loaded.
      */
