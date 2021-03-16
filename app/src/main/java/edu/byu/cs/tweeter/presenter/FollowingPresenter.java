@@ -67,6 +67,18 @@ public class FollowingPresenter implements FollowingService.Observer {
         this.authToken = authToken;
     }
 
+    User getLastFollowee() {
+        return lastFollowee;
+    }
+
+    boolean isHasMorePages() {
+        return hasMorePages;
+    }
+
+    boolean isLoading() {
+        return isLoading;
+    }
+
     /**
      * Called by the view to request that another page of "following" users be loaded.
      */
@@ -99,7 +111,7 @@ public class FollowingPresenter implements FollowingService.Observer {
      *
      * @return the instance.
      */
-    FollowingService getFollowingService(FollowingService.Observer observer) {
+    public FollowingService getFollowingService(FollowingService.Observer observer) {
         return new FollowingService(observer);
     }
 
