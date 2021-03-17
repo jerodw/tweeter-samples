@@ -1,27 +1,24 @@
 package edu.byu.cs.tweeter.client.view;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
-import edu.byu.cs.tweeter.model.service.request.LoginRequest;
-import edu.byu.cs.tweeter.model.service.response.LoginResponse;
 import edu.byu.cs.tweeter.client.presenter.LoginPresenter;
-import edu.byu.cs.tweeter.client.view.asyncTasks.LoginTask;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Contains the minimum UI required to allow the user to login with a hard-coded user. Most or all
  * of this should be replaced when the back-end is implemented.
  */
-public class LoginActivity extends AppCompatActivity implements LoginPresenter.View, LoginTask.Observer {
+public class LoginActivity extends AppCompatActivity implements LoginPresenter.View {
 
     private static final String LOG_TAG = "LoginActivity";
 
@@ -50,62 +47,36 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
                 loginInToast.show();
 
                 // It doesn't matter what values we put here. We will be logged in with a hard-coded dummy user.
-                LoginRequest loginRequest = new LoginRequest("dummyUserName", "dummyPassword");
-                LoginTask loginTask = new LoginTask(presenter, LoginActivity.this);
-                loginTask.execute(loginRequest);
+                presenter.initiateLogin("dummyUserName", "dummyPassword");
             }
         });
     }
 
     /**
-     * The callback method that gets invoked for a successful login. Displays the MainActivity.
+     * Called to notify view when a login completed successfully.
      *
-     * @param loginResponse the response from the login request.
+     * @param user the user who logged in.
+     * @param authToken the auth token for this session.
      */
     @Override
-    public void loginSuccessful(LoginResponse loginResponse) {
+    public void loginSuccessful(User user, AuthToken authToken) {
         Intent intent = new Intent(this, MainActivity.class);
 
-        intent.putExtra(MainActivity.CURRENT_USER_KEY, loginResponse.getUser());
-        intent.putExtra(MainActivity.AUTH_TOKEN_KEY, loginResponse.getAuthToken());
+        intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
+        intent.putExtra(MainActivity.AUTH_TOKEN_KEY, authToken);
 
         loginInToast.cancel();
         startActivity(intent);
     }
 
     /**
-     * The callback method that gets invoked for an unsuccessful login. Displays a toast with a
-     * message indicating why the login failed.
+     * Called to notify view when a login completes unsuccessfully.
      *
-     * @param loginResponse the response from the login request.
+     * @param message error message describing the failed login.
      */
     @Override
-    public void loginUnsuccessful(LoginResponse loginResponse) {
-        Toast.makeText(this, "Failed to login. " + loginResponse.getMessage(), Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * A callback indicating that an exception was thrown in an asynchronous method called on the
-     * presenter.
-     *
-     * @param exception the exception.
-     */
-    @Override
-    public void handleException(Exception exception) {
-        Log.e(LOG_TAG, exception.getMessage(), exception);
-
-        if(exception instanceof TweeterRemoteException) {
-            TweeterRemoteException remoteException = (TweeterRemoteException) exception;
-            Log.e(LOG_TAG, "Remote Exception Type: " + remoteException.getRemoteExceptionType());
-
-            Log.e(LOG_TAG, "Remote Stack Trace:");
-            if(remoteException.getRemoteStackTrace() != null) {
-                for(String stackTraceLine : remoteException.getRemoteStackTrace()) {
-                    Log.e(LOG_TAG, "\t\t" + stackTraceLine);
-                }
-            }
-        }
-
-        Toast.makeText(this, "Failed to login because of exception: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+    public void loginUnsuccessful(String message) {
+        loginInToast.cancel();
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 }

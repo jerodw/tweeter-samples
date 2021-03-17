@@ -56,7 +56,7 @@ public class FollowingServiceProxy implements FollowingService {
      *
      * @return the instance.
      */
-    ServerFacade getServerFacade() {
+    public ServerFacade getServerFacade() {
         return new ServerFacade();
     }
 }
