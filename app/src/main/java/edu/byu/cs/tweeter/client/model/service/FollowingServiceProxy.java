@@ -65,7 +65,7 @@ public class FollowingServiceProxy {
      *
      * @return the instance.
      */
-    ServerFacade getServerFacade() {
+    public ServerFacade getServerFacade() {
         return new ServerFacade();
     }
 
@@ -108,7 +108,7 @@ public class FollowingServiceProxy {
                 response = getServerFacade().getFollowees(followingRequests[0], URL_PATH);
 
                 if(response.isSuccess()) {
-                        loadImages(response);
+                    loadImages(response);
                 }
             } catch (Exception ex) {
                 exception = ex;

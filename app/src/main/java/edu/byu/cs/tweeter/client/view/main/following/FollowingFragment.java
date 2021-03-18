@@ -1,13 +1,6 @@
 package edu.byu.cs.tweeter.client.view.main.following;
 
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,18 +8,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.service.response.FollowingResponse;
 import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.util.ImageUtils;
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * The fragment that displays on the 'Following' tab.
@@ -40,10 +36,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
 
-    private static final int PAGE_SIZE = 10;
-
-    private User user;
-    private AuthToken authToken;
     private FollowingPresenter presenter;
 
     private FollowingRecyclerViewAdapter followingRecyclerViewAdapter;
@@ -67,16 +59,46 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         return fragment;
     }
 
+    /**
+     * Called to notify the view when data loading starts and ends.
+     *
+     * @param value true if we are loading, false otherwise.
+     */
+    @Override
+    public void setLoading(boolean value) {
+        followingRecyclerViewAdapter.setLoading(value);
+    }
+
+    /**
+     * Called to pass "following" users to the view when they are loaded.
+     *
+     * @param newUsers list of new "following" users.
+     */
+    @Override
+    public void addItems(List<User> newUsers) {
+        followingRecyclerViewAdapter.addItems(newUsers);
+    }
+
+    /**
+     * Directs the view to display the specified error message to the user.
+     *
+     * @param message error message to be displayed.
+     */
+    @Override
+    public void displayErrorMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_following, container, false);
 
         //noinspection ConstantConditions
-        user = (User) getArguments().getSerializable(USER_KEY);
-        authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
+        User user = (User) getArguments().getSerializable(USER_KEY);
+        AuthToken authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
 
-        presenter = new FollowingPresenter(this);
+        presenter = new FollowingPresenter(this, user, authToken);
 
         RecyclerView followingRecyclerView = view.findViewById(R.id.followingRecyclerView);
 
@@ -88,28 +110,9 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
 
         followingRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
+        presenter.loadMoreItems();
+
         return view;
-    }
-
-    /**
-     * A callback indicating more following data has been received.
-     *
-     * @param followingResponse the asynchronous response to the request to load more items.
-     */
-    @Override
-    public void followeesRetrieved(FollowingResponse followingResponse) {
-        followingRecyclerViewAdapter.followeesRetrieved(followingResponse);
-    }
-
-    /**
-     * A callback indicating that an exception was thrown in an asynchronous method called on the
-     * presenter.
-     *
-     * @param exception the exception.
-     */
-    @Override
-    public void handleException(Exception exception) {
-        followingRecyclerViewAdapter.handleException(exception);
     }
 
     /**
@@ -166,16 +169,28 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
 
         private final List<User> users = new ArrayList<>();
 
-        private edu.byu.cs.tweeter.model.domain.User lastFollowee;
-
-        private boolean hasMorePages;
         private boolean isLoading = false;
 
         /**
          * Creates an instance and loads the first page of following data.
          */
         FollowingRecyclerViewAdapter() {
-            loadMoreItems();
+            return;
+        }
+
+        /**
+         * Called to notify the adapter when data loading starts and ends.
+         *
+         * @param value true if we are loading, false otherwise.
+         */
+        void setLoading(boolean value) {
+            isLoading = value;
+            if (value) {
+                addLoadingFooter();
+            }
+            else {
+                removeLoadingFooter();
+            }
         }
 
         /**
@@ -274,45 +289,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         }
 
         /**
-         * Causes the Adapter to display a loading footer and make a request to get more following
-         * data.
-         */
-        void loadMoreItems() {
-            isLoading = true;
-            addLoadingFooter();
-
-            FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-            presenter.getFollowing(request);
-        }
-
-        /**
-         * Loads the new followees and removes the loading footer.
-         *
-         * @param followingResponse the asynchronous response to the request to load more items.
-         */
-        void followeesRetrieved(FollowingResponse followingResponse) {
-            List<User> followees = followingResponse.getFollowees();
-
-            lastFollowee = (followees.size() > 0) ? followees.get(followees.size() -1) : null;
-            hasMorePages = followingResponse.getHasMorePages();
-
-            isLoading = false;
-            removeLoadingFooter();
-            followingRecyclerViewAdapter.addItems(followees);
-        }
-
-        /**
-         * Logs the exception, removes the loading footer and notifies the user.
-         *
-         * @param exception the exception
-         */
-        public void handleException(Exception exception) {
-            Log.e(LOG_TAG, exception.getMessage(), exception);
-            removeLoadingFooter();
-            Toast.makeText(getContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
-        }
-
-        /**
          * Adds a dummy user to the list of users so the RecyclerView will display a view (the
          * loading footer view) at the bottom of the list.
          */
@@ -363,11 +339,9 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             int totalItemCount = layoutManager.getItemCount();
             int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
 
-            if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
-                if ((visibleItemCount + firstVisibleItemPosition) >=
-                        totalItemCount && firstVisibleItemPosition >= 0) {
-                    followingRecyclerViewAdapter.loadMoreItems();
-                }
+            if ((visibleItemCount + firstVisibleItemPosition) >=
+                    totalItemCount && firstVisibleItemPosition >= 0) {
+                presenter.loadMoreItems();
             }
         }
     }
