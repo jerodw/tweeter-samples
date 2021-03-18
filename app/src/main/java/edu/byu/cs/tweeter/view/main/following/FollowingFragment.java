@@ -1,6 +1,8 @@
 package edu.byu.cs.tweeter.view.main.following;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -326,7 +328,11 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
 
             if ((visibleItemCount + firstVisibleItemPosition) >=
                     totalItemCount && firstVisibleItemPosition >= 0) {
-                presenter.loadMoreItems();
+                // Run this code later on the UI thread
+                final Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(() -> {
+                    presenter.loadMoreItems();
+                }, 0);
             }
         }
     }
