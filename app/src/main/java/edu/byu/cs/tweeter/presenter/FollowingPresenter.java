@@ -30,27 +30,8 @@ public class FollowingPresenter implements FollowingService.Observer {
      * The interface by which this presenter communicates with it's view.
      */
     public interface View {
-        // Specify methods here that will be called on the view in response to model updates
-
-        /**
-         * Called to notify the view when data loading starts and ends.
-         *
-         * @param value true if we are loading, false otherwise.
-         */
         void setLoading(boolean value);
-
-        /**
-         * Called to pass "following" users to the view when they are loaded.
-         *
-         * @param newUsers list of new "following" users.
-         */
         void addItems(List<User> newUsers);
-
-        /**
-         * Directs the view to display the specified error message to the user.
-         *
-         * @param message error message to be displayed.
-         */
         void displayErrorMessage(String message);
     }
 

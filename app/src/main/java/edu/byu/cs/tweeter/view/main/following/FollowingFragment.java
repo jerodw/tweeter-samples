@@ -61,16 +61,31 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         return fragment;
     }
 
+    /**
+     * Called to notify the view when data loading starts and ends.
+     *
+     * @param value true if we are loading, false otherwise.
+     */
     @Override
     public void setLoading(boolean value) {
         followingRecyclerViewAdapter.setLoading(value);
     }
 
+    /**
+     * Called to pass "following" users to the view when they are loaded.
+     *
+     * @param newUsers list of new "following" users.
+     */
     @Override
     public void addItems(List<User> newUsers) {
         followingRecyclerViewAdapter.addItems(newUsers);
     }
 
+    /**
+     * Directs the view to display the specified error message to the user.
+     *
+     * @param message error message to be displayed.
+     */
     @Override
     public void displayErrorMessage(String message) {
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
