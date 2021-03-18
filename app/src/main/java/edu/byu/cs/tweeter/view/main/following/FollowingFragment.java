@@ -260,6 +260,7 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
          * data.
          */
         void loadMoreItems() {
+            // Run this code on the UI thread
             final Handler handler = new Handler(Looper.getMainLooper());
             handler.postDelayed(() -> {
                 isLoading = true;
@@ -286,7 +287,7 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
 
             isLoading = false;
             removeLoadingFooter();
-            followingRecyclerViewAdapter.addItems(followees);
+            addItems(followees);
         }
 
         /**
