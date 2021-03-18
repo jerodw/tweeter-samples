@@ -131,4 +131,5 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
         isLoading = false;
         view.setLoading(false);
         view.displayErrorMessage(exception.getMessage());
-    }}
+    }
+}
