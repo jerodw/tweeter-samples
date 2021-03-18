@@ -280,16 +280,12 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
          * data.
          */
         void loadMoreItems() {
-            // Run this code later on the UI thread
-            final Handler handler = new Handler(Looper.getMainLooper());
-            handler.postDelayed(() -> {
-                isLoading = true;
-                addLoadingFooter();
+            isLoading = true;
+            addLoadingFooter();
 
-                FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-                presenter.getFollowing(request);
-            }, 0);
-        }
+            FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
+            presenter.getFollowing(request);
+         }
 
         /**
          * Loads the new followees and removes the loading footer.
@@ -372,7 +368,11 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
                 if ((visibleItemCount + firstVisibleItemPosition) >=
                         totalItemCount && firstVisibleItemPosition >= 0) {
-                    followingRecyclerViewAdapter.loadMoreItems();
+                    // Run this code later on the UI thread
+                    final Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(() -> {
+                        followingRecyclerViewAdapter.loadMoreItems();
+                    }, 0);
                 }
             }
         }
