@@ -79,6 +79,8 @@ class ClientCommunicator {
             connection.setReadTimeout(TIMEOUT_MILLIS);
             requestStrategy.setRequestMethod(connection);
 
+            connection.setRequestProperty("Content-Type", "application/json");
+
             if(headers != null) {
                 for (String headerKey : headers.keySet()) {
                     connection.setRequestProperty(headerKey, headers.get(headerKey));
