@@ -77,7 +77,10 @@ class ClientCommunicator {
             URL url = getUrl(urlPath);
             connection = (HttpURLConnection) url.openConnection();
             connection.setReadTimeout(TIMEOUT_MILLIS);
+
             requestStrategy.setRequestMethod(connection);
+
+            connection.setRequestProperty("Content-Type", "application/json");
 
             if(headers != null) {
                 for (String headerKey : headers.keySet()) {
