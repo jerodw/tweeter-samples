@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -369,7 +370,14 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
                 if ((visibleItemCount + firstVisibleItemPosition) >=
                         totalItemCount && firstVisibleItemPosition >= 0) {
-                    followingRecyclerViewAdapter.loadMoreItems();
+                    // Must set this flag here to avoid race condition caused by running
+                    // the following code on the UI thread after a delay
+                    followingRecyclerViewAdapter.isLoading = true;
+                    // Run this code later on the UI thread
+                    final Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(() -> {
+                        followingRecyclerViewAdapter.loadMoreItems();
+                    }, 0);
                 }
             }
         }
