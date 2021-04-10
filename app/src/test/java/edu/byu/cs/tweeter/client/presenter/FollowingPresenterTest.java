@@ -58,11 +58,11 @@ public class FollowingPresenterTest {
      * {@link #setExceptionForRequest(FollowingRequest, Exception)}.
      * {@link #setResponseForRequest(FollowingRequest, FollowingResponse)}.
      */
-    private class FollowingServiceDouble extends FollowingServiceProxy {
+    private static class FollowingServiceDouble extends FollowingServiceProxy {
 
-        private Observer observer;
-        private Map<FollowingRequest, FollowingResponse> responsesByRequest = new HashMap<>();
-        private Map<FollowingRequest, Exception> exceptionsByRequest = new HashMap<>();
+        private final Observer observer;
+        private final Map<FollowingRequest, FollowingResponse> responsesByRequest = new HashMap<>();
+        private final Map<FollowingRequest, Exception> exceptionsByRequest = new HashMap<>();
 
         /**
          * Creates an instance.
@@ -83,7 +83,7 @@ public class FollowingPresenterTest {
         }
 
         /**
-         * Instead of creating an AsyncTask as the real service would do, just call either the
+         * Instead of creating a background task as the real service would do, just call either the
          * {@link FollowingPresenter.View#followeesRetrieved(FollowingResponse)} or
          * {@link FollowingPresenter.View#handleException(Exception)} method of the observer.
          *
