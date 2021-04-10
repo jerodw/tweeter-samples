@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -55,7 +56,7 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
                 loginInToast = Toast.makeText(LoginActivity.this, "Logging In", Toast.LENGTH_LONG);
                 loginInToast.show();
 
-                Handler messageHandler = new Handler() {
+                Handler messageHandler = new Handler(Looper.getMainLooper()) {
                     @Override
                     public void handleMessage(Message message) {
                         Bundle bundle = message.getData();
