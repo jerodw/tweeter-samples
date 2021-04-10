@@ -83,7 +83,7 @@ public class FollowingPresenterTest {
         }
 
         /**
-         * Instead of creating an AsyncTask as the real service would do, just call either the
+         * Instead of creating a background task as the real service would do, just call either the
          * {@link FollowingPresenter.View#followeesRetrieved(FollowingResponse)} or
          * {@link FollowingPresenter.View#handleException(Exception)} method of the observer.
          *

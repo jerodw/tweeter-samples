@@ -1,8 +1,13 @@
 package edu.byu.cs.tweeter.model.service;
 
-import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.ServerFacade;
@@ -14,6 +19,9 @@ import edu.byu.cs.tweeter.util.ByteArrayUtils;
  * Contains the business logic to support the login operation.
  */
 public class LoginService {
+
+    private static final String EXCEPTION_KEY = "ExceptionKey";
+    private static  final String LOGIN_RESPONSE_KEY = "LoginResponseKey";
 
     private final Observer observer;
 
@@ -43,8 +51,9 @@ public class LoginService {
      * @param loginRequest the login request.
      */
     public void login(LoginRequest loginRequest) {
-        AsyncTask<LoginRequest, Void, LoginResponse> loginTask = getLoginAsyncTask();
-        loginTask.execute(loginRequest);
+        LoginTask loginTask = getLoginTask(loginRequest);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(loginTask);
     }
 
     /**
@@ -60,43 +69,76 @@ public class LoginService {
 
 
     /**
-     * Returns an instance of {@link LoginAsyncTask}. Allows mocking of the LoginAsyncTask class for
-     * testing purposes. All usages of LoginAsyncTask should get their instance from this method to
+     * Returns an instance of {@link LoginTask}. Allows mocking of the LoginTask class for
+     * testing purposes. All usages of LoginTask should get their instance from this method to
      * allow for proper mocking.
      *
      * @return the instance.
      */
-    LoginAsyncTask getLoginAsyncTask() {
-        return new LoginAsyncTask();
+    LoginTask getLoginTask(LoginRequest request) {
+        return new LoginTask(request, new MessageHandler(Looper.getMainLooper(), observer));
     }
 
     /**
-     * The AsyncTask that makes the login request on a background thread.
+     * Handles the message from the background task indicating that the task is done, by invoking
+     * methods on the service's observer.
      */
-    private class LoginAsyncTask extends AsyncTask<LoginRequest, Void, LoginResponse> {
+    private static class MessageHandler extends Handler {
 
-        private Exception exception;
+        private final Observer observer;
+
+        MessageHandler(Looper looper, Observer observer) {
+            super(looper);
+            this.observer = observer;
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            Bundle bundle = message.getData();
+            Exception exception = (Exception) bundle.getSerializable(EXCEPTION_KEY);
+
+            if(exception == null) {
+                LoginResponse loginResponse = (LoginResponse) bundle.getSerializable(LOGIN_RESPONSE_KEY);
+                if(loginResponse.isSuccess()) {
+                    observer.loginSuccessful(loginResponse);
+                } else {
+                    observer.loginUnsuccessful(loginResponse);
+                }
+            } else {
+                observer.handleException(exception);
+            }
+        }
+    }
+
+    /**
+     * The task that makes the login request on a background thread.
+     */
+    private class LoginTask extends BackgroundTask {
+
+        private final LoginRequest request;
+
+        LoginTask(LoginRequest request, Handler messageHandler) {
+            super(messageHandler);
+            this.request = request;
+        }
 
         /**
-         * The method that is invoked on a background thread to log the user in. This method is
-         * invoked indirectly by calling {@link #execute(LoginRequest...)}.
          *
-         * @param loginRequests the request object (there will only be one).
-         * @return the response.
+         * The method that is invoked on a background thread to log the user in.
          */
-        @Override
-        protected LoginResponse doInBackground(LoginRequest... loginRequests) {
-            LoginResponse loginResponse = getServerFacade().login(loginRequests[0]);
+        public void run() {
+            LoginResponse loginResponse = getServerFacade().login(request);
 
             if(loginResponse.isSuccess()) {
                 try {
                     loadImage(loginResponse.getUser());
+                    sendMessage(LoginService.LOGIN_RESPONSE_KEY, loginResponse);
                 } catch (IOException ex) {
-                    exception = ex;
+                    sendMessage(LoginService.EXCEPTION_KEY, ex);
                 }
+            } else {
+                sendMessage(LoginService.LOGIN_RESPONSE_KEY, loginResponse);
             }
-
-            return loginResponse;
         }
 
         /**
@@ -107,23 +149,6 @@ public class LoginService {
         private void loadImage(User user) throws IOException {
             byte [] bytes = ByteArrayUtils.bytesFromUrl(user.getImageUrl());
             user.setImageBytes(bytes);
-        }
-
-        /**
-         * Notifies the observer (on the thread of the invoker of the
-         * {@link #execute(LoginRequest...)} method) when the task completes.
-         *
-         * @param loginResponse the response that was received by the task.
-         */
-        @Override
-        protected void onPostExecute(LoginResponse loginResponse) {
-            if(exception != null) {
-                observer.handleException(exception);
-            } else if(loginResponse.isSuccess()) {
-                observer.loginSuccessful(loginResponse);
-            } else {
-                observer.loginUnsuccessful(loginResponse);
-            }
         }
     }
 }
