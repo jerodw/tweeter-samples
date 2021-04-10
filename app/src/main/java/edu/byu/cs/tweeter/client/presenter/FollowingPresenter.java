@@ -115,9 +115,9 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
         lastFollowee = (followees.size() > 0) ? followees.get(followees.size() -1) : null;
         hasMorePages = followingResponse.getHasMorePages();
 
-        isLoading = false;
         view.setLoading(false);
         view.addItems(followees);
+        isLoading = false;
     }
 
     /**
@@ -128,8 +128,9 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
     @Override
     public void handleException(Exception exception) {
         Log.e(LOG_TAG, exception.getMessage(), exception);
-        isLoading = false;
+
         view.setLoading(false);
         view.displayErrorMessage(exception.getMessage());
+        isLoading = false;
     }
 }
