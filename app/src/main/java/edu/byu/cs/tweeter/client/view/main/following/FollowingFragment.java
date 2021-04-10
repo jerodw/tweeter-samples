@@ -261,12 +261,14 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
          * data.
          */
         void loadMoreItems() {
-            isLoading = true;
-            addLoadingFooter();
+            if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
+                isLoading = true;
+                addLoadingFooter();
 
-            GetFollowingTask getFollowingTask = new GetFollowingTask(presenter, this);
-            FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-            getFollowingTask.execute(request);
+                GetFollowingTask getFollowingTask = new GetFollowingTask(presenter, this);
+                FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
+                getFollowingTask.execute(request);
+            }
         }
 
         /**
@@ -366,10 +368,7 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
                 if ((visibleItemCount + firstVisibleItemPosition) >=
                         totalItemCount && firstVisibleItemPosition >= 0) {
-                    // Must set this flag here to avoid race condition caused by running
-                    // the following code on the UI thread after a delay
-                    followingRecyclerViewAdapter.isLoading = true;
-                    // Run this code later on the UI thread
+                     // Run this code later on the UI thread
                     final Handler handler = new Handler(Looper.getMainLooper());
                     handler.postDelayed(() -> {
                         followingRecyclerViewAdapter.loadMoreItems();
