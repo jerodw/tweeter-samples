@@ -264,28 +264,30 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
          * data.
          */
         void loadMoreItems() {
-            isLoading = true;
-            addLoadingFooter();
+            if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
+                isLoading = true;
+                addLoadingFooter();
 
-            Handler messageHandler = new Handler(Looper.getMainLooper()) {
-                @Override
-                public void handleMessage(Message message) {
-                    Bundle bundle = message.getData();
-                    Exception exception = (Exception) bundle.getSerializable(EXCEPTION_KEY);
+                Handler messageHandler = new Handler(Looper.getMainLooper()) {
+                    @Override
+                    public void handleMessage(Message message) {
+                        Bundle bundle = message.getData();
+                        Exception exception = (Exception) bundle.getSerializable(EXCEPTION_KEY);
 
-                    if(exception == null) {
-                        FollowingResponse followingResponse = (FollowingResponse) bundle.getSerializable(FOLLOWING_RESPONSE_KEY);
-                        followeesRetrieved(followingResponse);
-                    } else {
-                        handleException(exception);
+                        if (exception == null) {
+                            FollowingResponse followingResponse = (FollowingResponse) bundle.getSerializable(FOLLOWING_RESPONSE_KEY);
+                            followeesRetrieved(followingResponse);
+                        } else {
+                            handleException(exception);
+                        }
                     }
-                }
-            };
+                };
 
-            FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-            GetFollowingTask getFollowingTask = new GetFollowingTask(request, presenter, messageHandler);
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(getFollowingTask);
+                FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
+                GetFollowingTask getFollowingTask = new GetFollowingTask(request, presenter, messageHandler);
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(getFollowingTask);
+            }
         }
 
         /**
@@ -369,9 +371,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
             if (!followingRecyclerViewAdapter.isLoading && followingRecyclerViewAdapter.hasMorePages) {
                 if ((visibleItemCount + firstVisibleItemPosition) >=
                         totalItemCount && firstVisibleItemPosition >= 0) {
-                    // Must set this flag here to avoid race condition caused by running
-                    // the following code on the UI thread after a delay
-                    followingRecyclerViewAdapter.isLoading = true;
                     // Run this code later on the UI thread
                     final Handler handler = new Handler(Looper.getMainLooper());
                     handler.postDelayed(() -> {
