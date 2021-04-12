@@ -23,7 +23,6 @@ import java.util.List;
 import edu.byu.cs.tweeter.R;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
 import edu.byu.cs.tweeter.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.view.util.ImageUtils;
 
@@ -97,7 +96,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_following, container, false);
 
-        //noinspection ConstantConditions
         User user = (User) getArguments().getSerializable(USER_KEY);
         AuthToken authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
 
@@ -173,13 +171,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         private final List<User> users = new ArrayList<>();
 
         private boolean isLoading = false;
-
-        /**
-         * Creates an instance and loads the first page of following data.
-         */
-        FollowingRecyclerViewAdapter() {
-            return;
-        }
 
         /**
          * Called to notify the adapter when data loading starts and ends.
