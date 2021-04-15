@@ -91,8 +91,8 @@ public class FollowingServiceProxy {
     }
 
     /**
-     * Handles the message from the background task indicating that the task is done, by invoking
-     * methods on the service's observer.
+     * Handles messages from the background task indicating that the task is done, by invoking
+     * methods on the observer.
      */
     private static class MessageHandler extends Handler {
 
@@ -130,7 +130,7 @@ public class FollowingServiceProxy {
         }
 
         /**
-         * The method that is invoked on the background thread to retrieve followees.
+         * Invoked on the background thread to retrieve followees.
          */
         @Override
         public void run() {

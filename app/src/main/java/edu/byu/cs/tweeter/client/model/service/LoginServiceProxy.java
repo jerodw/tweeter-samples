@@ -47,9 +47,9 @@ public class LoginServiceProxy {
      * @param observer the observer who wants to be notified when any asynchronous operations
      *                 complete.
      */
-     public LoginServiceProxy(Observer observer) {
+    public LoginServiceProxy(Observer observer) {
         this.observer = observer;
-     }
+    }
 
     /**
      * Makes an asynchronous login request.
@@ -73,7 +73,6 @@ public class LoginServiceProxy {
         return new ServerFacade();
     }
 
-
     /**
      * Returns an instance of {@link LoginTask}. Allows mocking of the LoginTask class for
      * testing purposes. All usages of LoginTask should get their instance from this method to
@@ -86,8 +85,8 @@ public class LoginServiceProxy {
     }
 
     /**
-     * Handles the message from the background task indicating that the task is done, by invoking
-     * methods on the service's observer.
+     * Handles messages from the background task indicating that the task is done, by invoking
+     * methods on the observer.
      */
     private static class MessageHandler extends Handler {
 
@@ -131,6 +130,7 @@ public class LoginServiceProxy {
         /**
          * Invoked on a background thread to log the user in.
          */
+        @Override
         public void run() {
             try {
                 LoginResponse loginResponse = getServerFacade().login(request, URL_PATH);
