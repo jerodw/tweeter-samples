@@ -174,13 +174,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         private boolean isLoading = false;
 
         /**
-         * Creates an instance and loads the first page of following data.
-         */
-        FollowingRecyclerViewAdapter() {
-            return;
-        }
-
-        /**
          * Called to notify the adapter when data loading starts and ends.
          *
          * @param value true if we are loading, false otherwise.

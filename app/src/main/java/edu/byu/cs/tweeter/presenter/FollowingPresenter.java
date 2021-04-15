@@ -97,8 +97,7 @@ public class FollowingPresenter implements FollowingService.Observer {
     }
 
     /**
-     * Notifies the view when the users requested by the call to
-     * {@link #getFollowing(FollowingRequest)} have been retrieved.
+     * Adds new followees retrieved asynchronously from the service to the view.
      *
      * @param followingResponse the response.
      */
@@ -115,8 +114,8 @@ public class FollowingPresenter implements FollowingService.Observer {
     }
 
     /**
-     * A callback indicating that an exception occurred in an asynchronous method this class is
-     * observing. Notifies the view of the exception.
+     * Notifies the view that an exception occurred in an asynchronous method this class is
+     * observing.
      *
      * @param exception the exception.
      */
