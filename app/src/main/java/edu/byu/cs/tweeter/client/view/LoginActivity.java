@@ -4,26 +4,33 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.service.request.LoginRequest;
 import edu.byu.cs.tweeter.model.service.response.LoginResponse;
 import edu.byu.cs.tweeter.client.presenter.LoginPresenter;
-import edu.byu.cs.tweeter.client.view.asyncTasks.LoginTask;
+import edu.byu.cs.tweeter.client.view.backgroundtask.LoginTask;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 
 /**
  * Contains the minimum UI required to allow the user to login with a hard-coded user. Most or all
  * of this should be replaced when the back-end is implemented.
  */
-public class LoginActivity extends AppCompatActivity implements LoginPresenter.View, LoginTask.Observer {
+public class LoginActivity extends AppCompatActivity implements LoginPresenter.View {
 
     private static final String LOG_TAG = "LoginActivity";
+    public static final String EXCEPTION_KEY = "ExceptionKey";
+    public static final String LOGIN_RESPONSE_KEY = "LoginResponseKey";
 
     private LoginPresenter presenter;
     private Toast loginInToast;
@@ -49,20 +56,39 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
                 loginInToast = Toast.makeText(LoginActivity.this, "Logging In", Toast.LENGTH_LONG);
                 loginInToast.show();
 
+                Handler messageHandler = new Handler(Looper.getMainLooper()) {
+                    @Override
+                    public void handleMessage(Message message) {
+                        Bundle bundle = message.getData();
+                        Exception exception = (Exception) bundle.getSerializable(EXCEPTION_KEY);
+
+                        if(exception == null) {
+                            LoginResponse loginResponse = (LoginResponse) bundle.getSerializable(LOGIN_RESPONSE_KEY);
+                            if(loginResponse.isSuccess()) {
+                                loginSuccessful(loginResponse);
+                            } else {
+                                loginUnsuccessful(loginResponse);
+                            }
+                        } else {
+                            handleException(exception);
+                        }
+                    }
+                };
+
                 // It doesn't matter what values we put here. We will be logged in with a hard-coded dummy user.
                 LoginRequest loginRequest = new LoginRequest("dummyUserName", "dummyPassword");
-                LoginTask loginTask = new LoginTask(presenter, LoginActivity.this);
-                loginTask.execute(loginRequest);
+                LoginTask loginTask = new LoginTask(loginRequest, presenter, messageHandler);
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(loginTask);
             }
         });
     }
 
     /**
-     * The callback method that gets invoked for a successful login. Displays the MainActivity.
+     * Handles a successful login by displaying the MainActivity.
      *
      * @param loginResponse the response from the login request.
      */
-    @Override
     public void loginSuccessful(LoginResponse loginResponse) {
         Intent intent = new Intent(this, MainActivity.class);
 
@@ -74,38 +100,21 @@ public class LoginActivity extends AppCompatActivity implements LoginPresenter.V
     }
 
     /**
-     * The callback method that gets invoked for an unsuccessful login. Displays a toast with a
-     * message indicating why the login failed.
+     * Handles an unsuccessful login by displaying a toast with a message indicating why the login failed.
      *
      * @param loginResponse the response from the login request.
      */
-    @Override
     public void loginUnsuccessful(LoginResponse loginResponse) {
         Toast.makeText(this, "Failed to login. " + loginResponse.getMessage(), Toast.LENGTH_LONG).show();
     }
 
     /**
-     * A callback indicating that an exception was thrown in an asynchronous method called on the
-     * presenter.
+     * Handles any exceptions returned by the background task.
      *
      * @param exception the exception.
      */
-    @Override
     public void handleException(Exception exception) {
         Log.e(LOG_TAG, exception.getMessage(), exception);
-
-        if(exception instanceof TweeterRemoteException) {
-            TweeterRemoteException remoteException = (TweeterRemoteException) exception;
-            Log.e(LOG_TAG, "Remote Exception Type: " + remoteException.getRemoteExceptionType());
-
-            Log.e(LOG_TAG, "Remote Stack Trace:");
-            if(remoteException.getRemoteStackTrace() != null) {
-                for(String stackTraceLine : remoteException.getRemoteStackTrace()) {
-                    Log.e(LOG_TAG, "\t\t" + stackTraceLine);
-                }
-            }
-        }
-
         Toast.makeText(this, "Failed to login because of exception: " + exception.getMessage(), Toast.LENGTH_LONG).show();
     }
 }
