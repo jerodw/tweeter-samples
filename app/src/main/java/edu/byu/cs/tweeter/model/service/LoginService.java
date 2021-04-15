@@ -41,9 +41,9 @@ public class LoginService {
      * @param observer the observer who wants to be notified when any asynchronous operations
      *                 complete.
      */
-     public LoginService(Observer observer) {
+    public LoginService(Observer observer) {
         this.observer = observer;
-     }
+    }
 
     /**
      * Makes an asynchronous login request.
@@ -67,7 +67,6 @@ public class LoginService {
         return new ServerFacade();
     }
 
-
     /**
      * Returns an instance of {@link LoginTask}. Allows mocking of the LoginTask class for
      * testing purposes. All usages of LoginTask should get their instance from this method to
@@ -80,8 +79,8 @@ public class LoginService {
     }
 
     /**
-     * Handles the message from the background task indicating that the task is done, by invoking
-     * methods on the service's observer.
+     * Handles messages from the background task indicating that the task is done, by invoking
+     * methods on the observer.
      */
     private static class MessageHandler extends Handler {
 
@@ -123,21 +122,21 @@ public class LoginService {
         }
 
         /**
-         *
-         * The method that is invoked on a background thread to log the user in.
+         * Invoked on a background thread to log the user in.
          */
+        @Override
         public void run() {
             LoginResponse loginResponse = getServerFacade().login(request);
 
             if(loginResponse.isSuccess()) {
                 try {
                     loadImage(loginResponse.getUser());
-                    sendMessage(LoginService.LOGIN_RESPONSE_KEY, loginResponse);
+                    sendMessage(LOGIN_RESPONSE_KEY, loginResponse);
                 } catch (IOException ex) {
-                    sendMessage(LoginService.EXCEPTION_KEY, ex);
+                    sendMessage(EXCEPTION_KEY, ex);
                 }
             } else {
-                sendMessage(LoginService.LOGIN_RESPONSE_KEY, loginResponse);
+                sendMessage(LOGIN_RESPONSE_KEY, loginResponse);
             }
         }
 
