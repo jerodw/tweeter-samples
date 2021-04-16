@@ -5,11 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.service.response.FollowingResponse;
 import edu.byu.cs.tweeter.server.dao.FollowingDAO;
@@ -49,7 +47,7 @@ public class FollowingServiceImplTest {
      * method returns the same result as the {@link FollowingDAO} class.
      */
     @Test
-    public void testGetFollowees_validRequest_correctResponse() throws IOException, TweeterRemoteException {
+    public void testGetFollowees_validRequest_correctResponse() {
         FollowingResponse response = followingServiceImplSpy.getFollowees(request);
         Assertions.assertEquals(expectedResponse, response);
     }

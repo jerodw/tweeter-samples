@@ -1,11 +1,17 @@
 package edu.byu.cs.tweeter.client.model.service;
 
-import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.client.model.net.ServerFacade;
+import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.service.response.FollowingResponse;
 import edu.byu.cs.tweeter.client.util.ByteArrayUtils;
@@ -17,6 +23,9 @@ import edu.byu.cs.tweeter.model.service.FollowingService;
  * called asynchronously, but we need the implementing class on the server to be synchronous.
  */
 public class FollowingServiceProxy {
+
+    private static final String EXCEPTION_KEY = "ExceptionKey";
+    private static  final String FOLLOWING_RESPONSE_KEY = "FollowingResponseKey";
 
     static final String URL_PATH = "/getfollowing";
 
@@ -54,8 +63,9 @@ public class FollowingServiceProxy {
      * @param request contains the data required to fulfill the request.
      */
     public void getFollowees(FollowingRequest request) {
-        AsyncTask<FollowingRequest, Void, FollowingResponse> followingTask = getRetrieveFollowingAsyncTask();
-        followingTask.execute(request);
+        RetrieveFollowingTask followingTask = getRetrieveFollowingTask(request);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(followingTask);
     }
 
     /**
@@ -70,51 +80,72 @@ public class FollowingServiceProxy {
     }
 
     /**
-     * Returns an instance of {@link RetrieveFollowingAsyncTask}. Allows mocking of the
-     * RetrieveFollowingAsyncTask class for testing purposes. All usages of
-     * RetrieveFollowingAsyncTask should get their instance from this method to allow for proper
-     * mocking.
+     * Returns an instance of {@link RetrieveFollowingTask}. Allows mocking of the
+     * RetrieveFollowingTask class for testing purposes. All usages of RetrieveFollowingTask
+     * should get their instance from this method to allow for proper mocking.
      *
+     * @param request the request to be processed by the task.
      * @return the instance.
      */
-    RetrieveFollowingAsyncTask getRetrieveFollowingAsyncTask() {
-        return new RetrieveFollowingAsyncTask(observer);
+    RetrieveFollowingTask getRetrieveFollowingTask(FollowingRequest request) {
+        return new RetrieveFollowingTask(request, new MessageHandler(Looper.getMainLooper(), observer));
     }
 
     /**
-     * The AsyncTask that makes the request to retrieve followees on a background thread.
+     * Handles messages from the background task indicating that the task is done, by invoking
+     * methods on the observer.
      */
-    class RetrieveFollowingAsyncTask extends AsyncTask<FollowingRequest, Void, FollowingResponse> {
+    private static class MessageHandler extends Handler {
 
         private final Observer observer;
-        private Exception exception;
 
-        RetrieveFollowingAsyncTask(Observer observer) {
+        MessageHandler(Looper looper, Observer observer) {
+            super(looper);
             this.observer = observer;
         }
 
+        @Override
+        public void handleMessage(Message message) {
+            Bundle bundle = message.getData();
+            Exception exception = (Exception) bundle.getSerializable(EXCEPTION_KEY);
+
+            if(exception == null) {
+                FollowingResponse followingResponse = (FollowingResponse) bundle.getSerializable(FOLLOWING_RESPONSE_KEY);
+                observer.followeesRetrieved(followingResponse);
+            } else {
+                observer.handleException(exception);
+            }
+        }
+    }
+
+    /**
+     * The task that makes the request to retrieve followees on a background thread.
+     */
+    class RetrieveFollowingTask extends BackgroundTask {
+
+        private final FollowingRequest request;
+
+        RetrieveFollowingTask(FollowingRequest request, Handler messageHandler) {
+            super(messageHandler);
+            this.request = request;
+        }
+
         /**
-         * The method that is invoked on the background thread to retrieve followees. This method is
-         * invoked indirectly by calling {@link #execute(FollowingRequest...)}.
-         *
-         * @param followingRequests the request object (there will only be one).
-         * @return the response.
+         * Invoked on the background thread to retrieve followees.
          */
         @Override
-        protected FollowingResponse doInBackground(FollowingRequest... followingRequests) {
-            FollowingResponse response = null;
-
+        public void run() {
             try {
-                response = getServerFacade().getFollowees(followingRequests[0], URL_PATH);
+                FollowingResponse response = getServerFacade().getFollowees(request, URL_PATH);
 
                 if(response.isSuccess()) {
                     loadImages(response);
                 }
-            } catch (Exception ex) {
-                exception = ex;
-            }
 
-            return response;
+                sendMessage(FOLLOWING_RESPONSE_KEY, response);
+            } catch (IOException | TweeterRemoteException ex) {
+                sendMessage(EXCEPTION_KEY, ex);
+            }
         }
 
         /**
@@ -126,21 +157,6 @@ public class FollowingServiceProxy {
             for(User user : response.getFollowees()) {
                 byte [] bytes = ByteArrayUtils.bytesFromUrl(user.getImageUrl());
                 user.setImageBytes(bytes);
-            }
-        }
-
-        /**
-         * Notifies the observer (on the thread of the invoker of the
-         * {@link #execute(FollowingRequest...)} method) when the task completes.
-         *
-         * @param followingResponse the response that was received by the task.
-         */
-        @Override
-        protected void onPostExecute(FollowingResponse followingResponse) {
-            if(exception != null) {
-                observer.handleException(exception);
-            } else {
-                observer.followeesRetrieved(followingResponse);
             }
         }
     }

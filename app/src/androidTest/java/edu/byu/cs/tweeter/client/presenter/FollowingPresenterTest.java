@@ -187,7 +187,7 @@ public class FollowingPresenterTest {
                 user4, user5, user6, user7, user8, user9, user10), true);
         FollowingResponse response2 = new FollowingResponse(Arrays.asList(user11, user12, user13,
                 user14, user15, user16, user17, user18, user19, user20), true);
-        FollowingResponse response3 = new FollowingResponse(Arrays.asList(user21), false);
+        FollowingResponse response3 = new FollowingResponse(Collections.singletonList(user21), false);
         Mockito.doReturn(response1, response2, response3).when(serverFacadeMock).getFollowees(Mockito.any(), Mockito.any());
 
         followingPresenterSpy.loadMoreItems();
@@ -219,6 +219,6 @@ public class FollowingPresenterTest {
                 user5, user6, user7, user8, user9, user10));
         Mockito.verify(followingViewMock).addItems(Arrays.asList(user11, user12, user13, user14,
                 user15, user16, user17, user18, user19, user20));
-        Mockito.verify(followingViewMock).addItems(Arrays.asList(user21));
+        Mockito.verify(followingViewMock).addItems(Collections.singletonList(user21));
     }
 }
