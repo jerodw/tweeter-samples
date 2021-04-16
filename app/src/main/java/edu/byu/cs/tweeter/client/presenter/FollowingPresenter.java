@@ -1,9 +1,15 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.model.service.FollowingServiceProxy;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
@@ -12,12 +18,12 @@ import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.service.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.service.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.service.FollowingService;
-import edu.byu.cs.tweeter.client.presenter.asyncTasks.GetFollowingTask;
+import edu.byu.cs.tweeter.client.presenter.backgroundtasks.GetFollowingTask;
 
 /**
  * The presenter for the "following" functionality of the application.
  */
-public class FollowingPresenter implements GetFollowingTask.Observer {
+public class FollowingPresenter {
 
     private static final String LOG_TAG = "FollowingPresenter";
     private static final int PAGE_SIZE = 10;
@@ -72,9 +78,12 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
             isLoading = true;
             view.setLoading(true);
 
-            GetFollowingTask getFollowingTask = new GetFollowingTask(this, this);
             FollowingRequest request = new FollowingRequest(user.getAlias(), PAGE_SIZE, (lastFollowee == null ? null : lastFollowee.getAlias()));
-            getFollowingTask.execute(request);
+            MessageHandler messageHandler = new MessageHandler(Looper.getMainLooper(), this);
+            GetFollowingTask getFollowingTask = new GetFollowingTask(this, messageHandler, request);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.submit(getFollowingTask);
         }
     }
 
@@ -103,12 +112,11 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
     }
 
     /**
-     * A callback indicating more following data has been received. Loads the new followees
+     * Handles new following data received from the background task. Loads the new followees
      * and removes the loading footer.
      *
      * @param followingResponse the asynchronous response to the request to load more items.
      */
-    @Override
     public void followeesRetrieved(FollowingResponse followingResponse) {
         List<User> followees = followingResponse.getFollowees();
 
@@ -121,16 +129,42 @@ public class FollowingPresenter implements GetFollowingTask.Observer {
     }
 
     /**
-     * A callback indicating that an exception was thrown by the GetFollowingTask.
+     * Handles exceptions thrown by the GetFollowingTask.
      *
      * @param exception the exception.
      */
-    @Override
     public void handleException(Exception exception) {
         Log.e(LOG_TAG, exception.getMessage(), exception);
 
         view.setLoading(false);
         view.displayErrorMessage(exception.getMessage());
         isLoading = false;
+    }
+
+    /**
+     * Handles the message from the background task indicating that the task is done, by invoking
+     * methods on the presenter.
+     */
+    private static class MessageHandler extends Handler {
+
+        private final FollowingPresenter presenter;
+
+        MessageHandler(Looper looper, FollowingPresenter presenter) {
+            super(looper);
+            this.presenter = presenter;
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            Bundle bundle = message.getData();
+            Exception exception = (Exception) bundle.getSerializable(GetFollowingTask.EXCEPTION_KEY);
+
+            if(exception == null) {
+                FollowingResponse followingResponse = (FollowingResponse) bundle.getSerializable(GetFollowingTask.FOLLOWING_RESPONSE_KEY);
+                presenter.followeesRetrieved(followingResponse);
+            } else {
+                presenter.handleException(exception);
+            }
+        }
     }
 }
