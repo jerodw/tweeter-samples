@@ -96,7 +96,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_following, container, false);
 
-        //noinspection ConstantConditions
         User user = (User) getArguments().getSerializable(USER_KEY);
         AuthToken authToken = (AuthToken) getArguments().getSerializable(AUTH_TOKEN_KEY);
 
