@@ -143,7 +143,7 @@ public class FollowingServiceProxyTest {
 
     /**
      * Verify that for unsuccessful requests, the the {@link FollowingServiceProxy#getFollowees(FollowingRequest)}
-     * method loads the profile image of each user included in the result.
+     * method returns the same failure response as the server facade.
      */
     @Test
     public void testGetFollowees_invalidRequest_returnsNoFollowees() throws InterruptedException {
